@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 
-import tensorflow as tf
+# import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import time
 from PIL import Image
@@ -16,15 +18,15 @@ class TestError(Exception):
 
 class TestBatch(CNN):
     def __init__(self, img_path, char_set, model_save_dir, total):
-        # 模型路径
+        # Model path
         self.model_save_dir = model_save_dir
-        # 打乱文件顺序
+        # Disorder file order
         self.img_path = img_path
         self.img_list = os.listdir(img_path)
         random.seed(time.time())
         random.shuffle(self.img_list)
 
-        # 获得图片宽高和字符长度基本信息
+        # Get basic information about the image width and height and character length
         label, captcha_array = self.gen_captcha_text_image()
 
         captcha_shape = captcha_array.shape
@@ -35,30 +37,31 @@ class TestBatch(CNN):
         elif captcha_shape_len == 2:
             image_height, image_width = captcha_shape
         else:
-            raise TestError("图片转换为矩阵时出错，请检查图片格式")
+            raise TestError("An error occurred when the picture was converted to a matrix, please check the picture format")
 
-        # 初始化变量
+        # Initialize variables
         super(TestBatch, self).__init__(image_height, image_width, len(label), char_set, model_save_dir)
         self.total = total
 
-        # 相关信息打印
-        print("-->图片尺寸: {} X {}".format(image_height, image_width))
-        print("-->验证码长度: {}".format(self.max_captcha))
-        print("-->验证码共{}类 {}".format(self.char_set_len, char_set))
-        print("-->使用测试集为 {}".format(img_path))
+        # Related information printing
+        print("-->Image size: {} X {}".format(image_height, image_width))
+        print("-->Verification code length: {}".format(self.max_captcha))
+        print("-->Verification codes are {} types {}".format(self.char_set_len, char_set))
+        print("-->Use test set as {}".format(img_path))
 
     def gen_captcha_text_image(self):
         """
-        返回一个验证码的array形式和对应的字符串标签
+        Return an array form of the verification code and the corresponding string label
         :return:tuple (str, numpy.array)
         """
         img_name = random.choice(self.img_list)
-        # 标签
-        label = img_name.split("_")[0]
-        # 文件
+        # Tags ***
+        # label = img_name.split("_")[0]
+        label = img_name.split(".")[0]
+        # File
         img_file = os.path.join(self.img_path, img_name)
         captcha_image = Image.open(img_file)
-        captcha_array = np.array(captcha_image)  # 向量化
+        captcha_array = np.array(captcha_image) # Vectorization
 
         return label, captcha_array
 
@@ -73,7 +76,7 @@ class TestBatch(CNN):
             s = time.time()
             for i in range(total):
                 # test_text, test_image = gen_special_num_image(i)
-                test_text, test_image = self.gen_captcha_text_image()  # 随机
+                test_text, test_image = self.gen_captcha_text_image() # random
                 test_image = self.convert2gray(test_image)
                 test_image = test_image.flatten() / 255
 
@@ -90,8 +93,8 @@ class TestBatch(CNN):
                     pass
             e = time.time()
         rate = str(right/total * 100) + "%"
-        print("测试结果： {}/{}".format(right, total))
-        print("{}个样本识别耗时{}秒，准确率{}".format(total, e-s, rate))
+        print("Test result: {}/{}".format(right, total))
+        print("{}It takes {} seconds to identify a sample, and the accuracy is {}".format(total, e-s, rate))
 
 
 def main():
@@ -114,5 +117,5 @@ def main():
     tb.test_batch()
 
 
-if __name__ == '__main__':
+if __name__ =='__main__':
     main()

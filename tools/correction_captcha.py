@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 """
-人工在线验证脚本
+Manual online verification script
 """
 import requests
 from io import BytesIO
@@ -20,7 +20,7 @@ def correction(fail_path, pass_path, correction_times, remote_url):
 
     fail_count = 0
     for index in range(correction_times):
-        # 请求
+        # Request
         while True:
             try:
                 response = requests.request("GET", remote_url, headers=headers, timeout=10)
@@ -28,36 +28,36 @@ def correction(fail_path, pass_path, correction_times, remote_url):
             except Exception as e:
                 print(e)
 
-        # 识别
+        # Identification
         s = time.time()
         url = "http://127.0.0.1:6000/b"
-        files = {'image_file': ('captcha.jpg', BytesIO(response.content), 'application')}
+        files = {'image_file': ('captcha.jpg', BytesIO(response.content),'application')}
         r = requests.post(url=url, files=files)
         e = time.time()
         print(index, int((e-s)*1000), "ms")
         print(r.text)
         time.sleep(2)
 
-        # 识别结果
+        # Recognition result
         predict_text = json.loads(r.text)["value"]
         f = plt.figure()
         ax = f.add_subplot(111)
-        ax.text(0.1, 0.9, "备注", ha='center', va='center', transform=ax.transAxes)
+        ax.text(0.1, 0.9, "Remarks", ha='center', va='center', transform=ax.transAxes)
 
-        # 图片字节流转为image array
+        # Image byte flow is converted to image array
         img = BytesIO(response.content)
         img = Image.open(img, mode="r")
         captcha_array = np.array(img)
         plt.imshow(captcha_array)
 
-        # 预测图片
-        print("预测: {}\n".format(predict_text))
+        # Forecast picture
+        print("Prediction: {}\n".format(predict_text))
 
-        # 显示图片和预测结果
-        plt.text(20, 2, 'predict:{}'.format(predict_text))
+        # Display pictures and forecast results
+        plt.text(20, 2,'predict:{}'.format(predict_text))
         plt.show()
 
-        q = input("index:<{}> 正确按enter，错误输入真实值后会保存:".format(index))
+        q = input("index:<{}> Press enter correctly, and the real value will be saved after wrong input: ".format(index))
         img_name = "{}_{}".format(q, str(time.time()).replace(".", ""))
         if q:
             path = os.path.join(fail_path, img_name)
@@ -71,7 +71,7 @@ def correction(fail_path, pass_path, correction_times, remote_url):
 
         print("==============")
 
-    rate = (correction_times - fail_count)/correction_times
+    rate = (correction_times-fail_count)/correction_times
     print("Pass Rate: {}".format(rate))
 
 
@@ -84,8 +84,5 @@ def main():
     correction(fail_path, pass_path, correction_times, remote_url)
 
 
-if __name__ == '__main__':
+if __name__ =='__main__':
     main()
-
-
-

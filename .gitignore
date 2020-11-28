@@ -106,7 +106,7 @@ venv.bak/
 # pycharm
 .idea/
 
-# 数据文件
+# 數據文件
 sample/
 model/
 labels.json
