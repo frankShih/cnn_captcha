@@ -31,6 +31,10 @@ model_save_dir = sample_conf["model_save_dir"]
 image_suffix = sample_conf["image_suffix"] # File suffix
 use_labels_json_file = sample_conf['use_labels_json_file']
 
+if not os.path.exists(api_image_dir):
+    print("[Warning] Cannot find directory {}, will be created soon".format(api_image_dir))
+    os.makedirs(api_image_dir)
+
 if use_labels_json_file:
     with open("tools/labels.json", "r") as f:
         char_set = f.read().strip()
@@ -57,7 +61,7 @@ def response_headers(content):
 @app.route('/b', methods=['POST'])
 def up_image():
     if request.method =='POST' and request.files.get('image_file'):
-        timec = str(time.time()).replace(".", "")
+        # timec = str(time.time()).replace(".", "")
         file = request.files.get('image_file')
         img = file.read()
         img = BytesIO(img)
@@ -69,12 +73,12 @@ def up_image():
         e = time.time()
         print("Recognition result: {}".format(value))
         # save Picture
-        print("Save picture: {}{}_{}.{}".format(api_image_dir, value, timec, image_suffix))
-        file_name = "{}_{}.{}".format(value, timec, image_suffix)
+        print("Save picture: {}{}.{}".format(api_image_dir, value, image_suffix))
+        file_name = "{}.{}".format(value, image_suffix)
         file_path = os.path.join(api_image_dir + file_name)
         img.save(file_path)
         result = {
-            'time': timec, # timestamp
+            'timestamp': str(s), # timestamp
             'value': value, # predicted result
             'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
         }
@@ -87,8 +91,5 @@ def up_image():
 
 
 if __name__ =='__main__':
-    app.run(
-        host='0.0.0.0',
-        port=6000,
-        debug=True
-    )
+    app.run(host='0.0.0.0',port=6000,debug=True)
+    # app.run(host='0.0.0.0',port=5000,debug=False) # for deployment

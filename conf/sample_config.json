@@ -2,6 +2,7 @@
   "origin_image_dir": "sample/origin/",
   "new_image_dir": "sample/new_train/",
   "train_image_dir": "sample/train/",
+  "train_image_dir1": "D:/Dropbox/WPG/hackathon/hackathon2020/contest/datasets/source1_100_done/",
   "test_image_dir": "sample/test/",
   "test_image_dir1": "D:/Dropbox/WPG/hackathon/hackathon2020/contest/datasets/ITU6_DataSet/Data 1/",
   "api_image_dir": "sample/api/",
@@ -19,6 +20,6 @@
   "acc_stop": 0.99,
   "cycle_save": 500,
   "enable_gpu": 1,
-  "train_batch_size": 128,
+  "train_batch_size": 256,
   "test_batch_size": 50
 }
