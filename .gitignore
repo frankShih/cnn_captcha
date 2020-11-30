@@ -106,13 +106,11 @@ venv.bak/
 # pycharm
 .idea/
 
-# 數據文件
+# self-defined
 sample/
 model/
 labels.json
-test.csv
-loss_test.csv
-loss_train.csv
-
-
 logs/
+*.csv
+*.zip
+
