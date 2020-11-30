@@ -68,7 +68,8 @@ class TestBatch(CNN):
     def test_batch(self):
         y_predict = self.model()
         total = self.total
-        right = 0
+        right_word_cnt = 0
+        right_char_cnt = 0
 
         saver = tf.train.Saver()
         with tf.Session() as sess:
@@ -84,17 +85,21 @@ class TestBatch(CNN):
                 text_list = sess.run(predict, feed_dict={self.X: [test_image], self.keep_prob: 1.})
                 predict_text = text_list[0].tolist()
                 p_text = ""
-                for p in predict_text:
-                    p_text += str(self.char_set[p])
+                for i in range(len(predict_text)):
+                    p_char = str(self.char_set[predict_text[i]])
+                    if p_char==test_text[i]:
+                        p_text +=p_char
+                        right_char_cnt+=1
                 print("origin: {} predict: {}".format(test_text, p_text))
                 if test_text == p_text:
-                    right += 1
+                    right_word_cnt += 1
                 else:
                     pass
             e = time.time()
-        rate = str(right/total * 100) + "%"
-        print("Test result: {}/{}".format(right, total))
-        print("{}It takes {} seconds to identify a sample, and the accuracy is {}".format(total, e-s, rate))
+        word_rate = str(right_word_cnt/total * 100) + "%"
+        char_rate = right_char_cnt/(total*len(test_text))
+        print("Test result: {}/{}".format(right_word_cnt, total))
+        print("{} iterations take {} seconds. The character accuracy is {}. The image accuracy is {}".format(total, e-s, word_rate, char_rate))
 
 
 def main():
