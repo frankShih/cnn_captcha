@@ -13,7 +13,7 @@ import os
 from cnnlib.recognition_object import Recognizer
 
 import time
-from flask import Flask, request, jsonify, Response
+from flask import Flask, Response, request
 from PIL import Image
 
 # Use CPU by default
@@ -46,7 +46,7 @@ app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Generate recognition object, need to configure parameters
-R = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
+rcnzr1 = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir+'model1_lineNoise/')
 
 # If you need to use multiple models, you can refer to the original example to configure routing and write logic
 # Q = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
@@ -58,35 +58,40 @@ def response_headers(content):
     return resp
 
 
-@app.route('/b', methods=['POST'])
-def up_image():
-    if request.method =='POST' and request.files.get('image_file'):
-        # timec = str(time.time()).replace(".", "")
-        file = request.files.get('image_file')
+@app.route('/', methods=['POST'])
+def service(req=None):
+    if req is None: req=request
+    if req.method =='POST' and req.files.get('image_file'):
+        file = req.files.get('image_file')
         img = file.read()
         img = BytesIO(img)
         img = Image.open(img, mode="r")
         # username = request.form.get("name")
         print("Receive image size: {}".format(img.size))
+        mode = req.args.get('mode', default = None)
         s = time.time()
-        value = R.rec_image(img)
-        e = time.time()
-        print("Recognition result: {}".format(value))
-        # save Picture
-        print("Save picture: {}{}.{}".format(api_image_dir, value, image_suffix))
-        file_name = "{}.{}".format(value, image_suffix)
-        file_path = os.path.join(api_image_dir + file_name)
-        img.save(file_path)
-        result = {
-            'timestamp': str(s), # timestamp
-            'value': value, # predicted result
-            'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
-        }
-        img.close()
-        return jsonify(result)
+        if mode=='1':
+            value = rcnzr1.rec_image(img)
+            e = time.time()
+            print("Recognition result: {}".format(value))
+            img.close()
+            result = {
+                'timestamp': str(s), # timestamp
+                'value': value, # predicted result
+                'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
+            }
+            return Response(json.dumps(result, indent = 4), status=200)
+        elif mode=='2':
+            return Response('Not implemented yet.', status=204)
+        elif mode=='3':
+            return Response('Not implemented yet.', status=204)
+        else:
+            return Response('Invalid request format', status=404)
+
+
     else:
-        content = json.dumps({"error_code": "1001"})
-        resp = response_headers(content)
+        resp = Response(f'Invalid request', status=404)
+        resp.headers['Access-Control-Allow-Origin'] ='*'
         return resp
 
 
