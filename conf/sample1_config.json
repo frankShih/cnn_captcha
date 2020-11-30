@@ -8,7 +8,7 @@
   "api_image_dir": "sample/api/",
   "online_image_dir": "sample/online/",
   "local_image_dir": "sample/local/",
-  "model_save_dir": "model/",
+  "model_save_dir": "model/model1_lineNoise/",
   "image_width": 76,
   "image_height": 26,
   "max_captcha": 5,

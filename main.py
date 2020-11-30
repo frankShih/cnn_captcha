@@ -20,36 +20,41 @@ from PIL import Image
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-with open("conf/sample_config.json", "r") as f:
-    sample_conf = json.load(f)
-# Configuration parameters
-image_height = sample_conf["image_height"]
-image_width = sample_conf["image_width"]
-max_captcha = sample_conf["max_captcha"]
-api_image_dir = sample_conf["api_image_dir"]
-model_save_dir = sample_conf["model_save_dir"]
-image_suffix = sample_conf["image_suffix"] # File suffix
-use_labels_json_file = sample_conf['use_labels_json_file']
-
-if not os.path.exists(api_image_dir):
-    print("[Warning] Cannot find directory {}, will be created soon".format(api_image_dir))
-    os.makedirs(api_image_dir)
-
-if use_labels_json_file:
-    with open("tools/labels.json", "r") as f:
-        char_set = f.read().strip()
-else:
-    char_set = sample_conf["char_set"]
 
 # Flask object
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Generate recognition object, need to configure parameters
-rcnzr1 = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir+'model1_lineNoise/')
+
+def initialize_rcgz(cfg_path):
+    with open(cfg_path, "r") as f:
+        sample_conf = json.load(f)
+    # Configuration parameters
+    image_height = sample_conf["image_height"]
+    image_width = sample_conf["image_width"]
+    max_captcha = sample_conf["max_captcha"]
+    api_image_dir = sample_conf["api_image_dir"]
+    model_save_dir = sample_conf["model_save_dir"]
+    image_suffix = sample_conf["image_suffix"] # File suffix
+    use_labels_json_file = sample_conf['use_labels_json_file']
+
+    if not os.path.exists(api_image_dir):
+        print("[Warning] Cannot find directory {}, will be created soon".format(api_image_dir))
+        os.makedirs(api_image_dir)
+
+    if use_labels_json_file:
+        with open("tools/labels.json", "r") as f:
+            char_set = f.read().strip()
+    else:
+        char_set = sample_conf["char_set"]
+
+    return Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
 
 # If you need to use multiple models, you can refer to the original example to configure routing and write logic
 # Q = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
+rcgz1 = initialize_rcgz("conf/sample1_config.json")
+rcgz2 = initialize_rcgz("conf/sample2_config.json")
 
 
 def response_headers(content):
@@ -71,7 +76,7 @@ def service(req=None):
         mode = req.args.get('mode', default = None)
         s = time.time()
         if mode=='1':
-            value = rcnzr1.rec_image(img)
+            value = rcgz1.rec_image(img)
             e = time.time()
             print("Recognition result: {}".format(value))
             img.close()
@@ -82,7 +87,16 @@ def service(req=None):
             }
             return Response(json.dumps(result, indent = 4), status=200)
         elif mode=='2':
-            return Response('Not implemented yet.', status=204)
+            value = rcgz2.rec_image(img)
+            e = time.time()
+            print("Recognition result: {}".format(value))
+            img.close()
+            result = {
+                'timestamp': str(s), # timestamp
+                'value': value, # predicted result
+                'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
+            }
+            return Response(json.dumps(result, indent = 4), status=200)
         elif mode=='3':
             return Response('Not implemented yet.', status=204)
         else:
