@@ -67,7 +67,7 @@ def verify(origin_dir, real_width, real_height, image_suffix):
     return bad_img
 
 
-def split(origin_dir, train_dir, test_dir, bad_imgs):
+def split_data(origin_dir, train_dir, test_dir, bad_imgs):
     """
     Separate training set and test set
     :return:
@@ -145,7 +145,7 @@ def main():
         bad_imgs = []
         for info in bad_images_info:
             bad_imgs.append(info[1])
-        split(image_dir, train_dir, test_dir, bad_imgs)
+        split_data(image_dir, train_dir, test_dir, bad_imgs)
 
 
 if __name__ =='__main__':
