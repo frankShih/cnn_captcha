@@ -10,6 +10,7 @@ from PIL import Image
 import random
 import os
 from cnnlib.network import CNN
+import gcsfs
 
 
 class TestError(Exception):
@@ -56,8 +57,7 @@ class TestBatch(CNN):
         """
         img_name = random.choice(self.img_list)
         # Tags ***
-        # label = img_name.split("_")[0]
-        label = img_name.split(".")[0]
+        label = img_name.split("_")[0]
         # File
         img_file = os.path.join(self.img_path, img_name)
         captcha_image = Image.open(img_file)
@@ -108,8 +108,16 @@ def main():
 
     test_image_dir = sample_conf["test_image_dir"]
     model_save_dir = sample_conf["model_save_dir"]
-
     use_labels_json_file = sample_conf['use_labels_json_file']
+    model_gcp_dir = sample_conf["model_gcp_dir"]
+    if os.path.exists('/tmp'):
+        model_save_dir = f'/tmp/{model_save_dir}'
+
+    fs = gcsfs.GCSFileSystem(project=os.environ.get('PROJ_NAME', 'DSU-dev'))
+    for filename in fs.ls(model_gcp_dir):
+        if filename.endswith('/'): continue
+        fs.get(filename, '{}/{}'.format(
+            model_save_dir, filename.split('/')[-1]))
 
     if use_labels_json_file:
         with open("tools/labels.json", "r") as f:

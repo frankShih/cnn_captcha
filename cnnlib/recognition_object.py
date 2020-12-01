@@ -14,7 +14,8 @@ import numpy as np
 from PIL import Image
 from cnnlib.network import CNN
 import json
-
+import os
+import gcsfs
 
 class Recognizer(CNN):
     def __init__(self, image_height, image_width, max_captcha, char_set, model_save_dir):
@@ -70,6 +71,16 @@ def main():
     max_captcha = sample_conf["max_captcha"]
     char_set = sample_conf["char_set"]
     model_save_dir = sample_conf["model_save_dir"]
+    model_gcp_dir = sample_conf["model_gcp_dir"]
+    if os.path.exists('/tmp'):
+        model_save_dir = f'/tmp/{model_save_dir}'
+
+    fs = gcsfs.GCSFileSystem(project=os.environ.get('PROJ_NAME', 'DSU-dev'))
+    for filename in fs.ls(model_gcp_dir):
+        if filename.endswith('/'): continue
+        fs.get(filename, '{}/{}'.format(
+            model_save_dir, filename.split('/')[-1]))
+
     R = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
     r_img = Image.open("./sample/test/2b3n_6915e26c67a52bc0e4e13d216eb62b37.jpg")
     t = R.rec_image(r_img)

@@ -31,3 +31,7 @@ tensorflow==2.1.0
 termcolor==1.1.0
 urllib3==1.25.8
 Werkzeug==0.16.1
+fsspec==0.6.2
+gcsfs==0.4.0
+google-cloud-error-reporting==0.30.0
+google-cloud-storage==1.20.0

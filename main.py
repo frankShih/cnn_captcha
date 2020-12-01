@@ -15,11 +15,12 @@ from cnnlib.recognition_object import Recognizer
 import time
 from flask import Flask, Response, request
 from PIL import Image
+import gcsfs
 
 # Use CPU by default
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
+#TODO add hash string back to image file
 
 # Flask object
 app = Flask(__name__)
@@ -38,6 +39,16 @@ def initialize_rcgz(cfg_path):
     model_save_dir = sample_conf["model_save_dir"]
     image_suffix = sample_conf["image_suffix"] # File suffix
     use_labels_json_file = sample_conf['use_labels_json_file']
+    model_gcp_dir = sample_conf["model_gcp_dir"]
+    if  os.path.exists('/tmp'):
+        model_save_dir = f'/tmp/{model_save_dir}'
+
+    fs = gcsfs.GCSFileSystem(project=os.environ.get('PROJ_NAME', 'DSU-dev'))
+    for filename in fs.ls(model_gcp_dir):
+        # print(model_save_dir, model_gcp_dir, filename, filename.split('/')[-1])
+        if filename.endswith('/'): continue
+        fs.get(filename, '{}/{}'.format(
+            model_save_dir, filename.split('/')[-1]))
 
     if not os.path.exists(api_image_dir):
         print("[Warning] Cannot find directory {}, will be created soon".format(api_image_dir))

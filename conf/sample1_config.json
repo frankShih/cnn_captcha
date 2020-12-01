@@ -9,6 +9,7 @@
   "online_image_dir": "sample/online/",
   "local_image_dir": "sample/local/",
   "model_save_dir": "model/model1_lineNoise/",
+  "model_gcp_dir": "gs://hackathon_2020_dev/model1_lineNoise/",
   "image_width": 76,
   "image_height": 26,
   "max_captcha": 5,
