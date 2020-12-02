@@ -51,16 +51,24 @@ class Recognizer(CNN):
         # Use the specified graph and session
         with self.g.as_default():
             with self.sess.as_default() as sess:
-                text_list = sess.run(self.predict, feed_dict={self.X: [test_image], self.keep_prob: 1.})
-
+                # text_list = sess.run(self.predict, feed_dict={self.X: [test_image], self.keep_prob: 1.})
+                # output prob
+                prob = sess.run(
+                    tf.nn.softmax(tf.reshape(self.y_predict, [-1, self.max_captcha, self.char_set_len]), axis=2),
+                    feed_dict={self.X: [test_image], self.keep_prob: 1.})
+                prob_v = np.around(np.sort(prob, axis=2), 3)[:, :, -5:][-1]
+                prob_arg = np.argsort(prob, axis=2)[:, :, -5:][-1]
         # Get results
-        predict_text = text_list[0].tolist()
+        # print(prob_arg, prob_v)
+        prob_arg = [x[-1] for x in prob_arg]
+        prob_v = [x[-1] for x in prob_v]
+        # print(prob_arg, prob_v)
         p_text = ""
-        for p in predict_text:
+        for p in prob_arg:
             p_text += str(self.char_set[p])
 
         # Return recognition result
-        return p_text
+        return p_text, prob_v
 
 
 def main():
@@ -83,7 +91,7 @@ def main():
 
     R = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
     r_img = Image.open("./sample/test/2b3n_6915e26c67a52bc0e4e13d216eb62b37.jpg")
-    t = R.rec_image(r_img)
+    t, _ = R.rec_image(r_img)
     print(t)
 
 

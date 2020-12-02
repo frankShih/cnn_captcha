@@ -87,24 +87,26 @@ def service(req=None):
         mode = req.args.get('mode', default = None)
         s = time.time()
         if mode=='1':
-            value = rcgz1.rec_image(img)
+            value, prob = rcgz1.rec_image(img)
             e = time.time()
             print("Recognition result: {}".format(value))
             img.close()
             result = {
                 'timestamp': str(s), # timestamp
                 'value': value, # predicted result
+                'probability': str(prob),
                 'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
             }
             return Response(json.dumps(result, indent = 4), status=200)
         elif mode=='2':
-            value = rcgz2.rec_image(img)
+            value, prob = rcgz2.rec_image(img)
             e = time.time()
             print("Recognition result: {}".format(value))
             img.close()
             result = {
                 'timestamp': str(s), # timestamp
                 'value': value, # predicted result
+                'probability': str(prob),
                 'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
             }
             return Response(json.dumps(result, indent = 4), status=200)
