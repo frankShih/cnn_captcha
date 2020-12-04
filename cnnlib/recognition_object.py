@@ -71,6 +71,11 @@ class Recognizer(CNN):
         return p_text, prob_v
 
 
+    def is_valid_input(self, wid, hgt):
+        # print(self.image_height, hgt, self.image_width, wid)
+        return (self.image_height==hgt and self.image_width==wid)
+
+
 def main():
     with open("conf/sample_config.json", "r", encoding="utf-8") as f:
         sample_conf = json.load(f)

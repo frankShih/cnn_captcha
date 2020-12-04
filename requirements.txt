@@ -35,3 +35,4 @@ fsspec==0.6.2
 gcsfs==0.4.0
 google-cloud-error-reporting==0.30.0
 google-cloud-storage==1.20.0
+opencv-python==3.4.2.17

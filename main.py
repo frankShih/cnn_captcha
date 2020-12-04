@@ -95,16 +95,22 @@ def service(req=None):
     img = Image.open(BytesIO(file), mode="r")
     # username = request.form.get("name")
     print("Receive image size: {}".format(img.size))
+    width, height = img.size
     mode = req.args.get('mode', default = None)
     if mode=='1':
-        value, prob = rcgz1.rec_image(img)
+        if not rcgz1.is_valid_input(width, height):
+            return Response(f'Invalid image size ({rcgz1.image_width}, {rcgz1.image_height})', status=404)
+
+        value, _ = rcgz1.rec_image(img)
         result = {
             'timestamp': str(s), # timestamp
             'value': value, # predicted result
-            'probability': str(prob),
         }
     elif mode=='2':
-        value, prob = rcgz2.rec_image(img)
+        if not rcgz2.is_valid_input(width, height):
+            return Response(f'Invalid image size ({rcgz1.image_width}, {rcgz1.image_height})', status=404)
+
+        value, _ = rcgz2.rec_image(img)
         try:
             new_val=eval(value)
         except Exception as e:
@@ -115,9 +121,11 @@ def service(req=None):
             'timestamp': str(s), # timestamp
             'origin_value': value, # predicted result
             'value': new_val, # predicted result
-            'probability': str(prob),
         }
     elif mode=='3':
+        if not rcgz3.is_valid_input(width, height):
+            return Response(f'Invalid image size ({rcgz1.image_width}, {rcgz1.image_height})', status=404)
+
         open_cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_BGRA2RGBA)
         kernel = np.ones((2,2),np.uint8)
         erosion = cv2.erode(open_cv_image, kernel, iterations = 1)
@@ -125,23 +133,20 @@ def service(req=None):
         dilation_flt = cv2.filter2D(erosion, -1, kernel=kernel)
         im_pil = cv2.cvtColor(dilation_flt, cv2.COLOR_BGRA2RGBA)
         im_pil = Image.fromarray(im_pil)
-        value, prob = rcgz3.rec_image(im_pil)
+        value, _ = rcgz3.rec_image(im_pil)
         result = {
             'timestamp': str(s), # timestamp
             'value': value, # predicted result
-            'probability': str(prob),
         }
     else:
         return Response('Invalid request format', status=404)
 
-
     img.close()
     e = time.time()
+    result['speed_time(ms)']=int((e-s) * 1000)
     res_str = json.dumps(result, indent = 4)
     print(res_str)
-    result['speed_time(ms)']=int((e-s) * 1000)
     return Response(res_str, status=200)
-
 
 
 if __name__ =='__main__':
