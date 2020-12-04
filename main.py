@@ -16,6 +16,9 @@ import time
 from flask import Flask, Response, request
 from PIL import Image
 import gcsfs
+import cv2
+import numpy as np
+from pathlib import Path
 
 # Use CPU by default
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -43,12 +46,16 @@ def initialize_rcgz(cfg_path):
     if  os.path.exists('/tmp'):
         model_save_dir = f'/tmp/{model_save_dir}'
 
-    fs = gcsfs.GCSFileSystem(project=os.environ.get('PROJ_NAME', 'DSU-dev'))
-    for filename in fs.ls(model_gcp_dir):
-        # print(model_save_dir, model_gcp_dir, filename, filename.split('/')[-1])
-        if filename.endswith('/'): continue
-        fs.get(filename, '{}/{}'.format(
-            model_save_dir, filename.split('/')[-1]))
+    path = Path(model_save_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    directory= os.listdir(model_save_dir)
+    if len(directory) == 0:
+        fs = gcsfs.GCSFileSystem(project=os.environ.get('PROJ_NAME', 'DSU-dev'))
+        for filename in fs.ls(model_gcp_dir):
+            # print(model_save_dir, model_gcp_dir, filename, filename.split('/')[-1])
+            if filename.endswith('/'): continue
+            fs.get(filename, '{}/{}'.format(
+                model_save_dir, filename.split('/')[-1]))
 
     if not os.path.exists(api_image_dir):
         print("[Warning] Cannot find directory {}, will be created soon".format(api_image_dir))
@@ -66,6 +73,7 @@ def initialize_rcgz(cfg_path):
 # Q = Recognizer(image_height, image_width, max_captcha, char_set, model_save_dir)
 rcgz1 = initialize_rcgz("conf/sample1_config.json")
 rcgz2 = initialize_rcgz("conf/sample2_config.json")
+rcgz3 = initialize_rcgz("conf/sample3_config.json")
 
 
 def response_headers(content):
@@ -77,49 +85,63 @@ def response_headers(content):
 @app.route('/', methods=['POST'])
 def service(req=None):
     if req is None: req=request
-    if req.method =='POST' and req.files.get('image_file'):
-        file = req.files.get('image_file')
-        img = file.read()
-        img = BytesIO(img)
-        img = Image.open(img, mode="r")
-        # username = request.form.get("name")
-        print("Receive image size: {}".format(img.size))
-        mode = req.args.get('mode', default = None)
-        s = time.time()
-        if mode=='1':
-            value, prob = rcgz1.rec_image(img)
-            e = time.time()
-            print("Recognition result: {}".format(value))
-            img.close()
-            result = {
-                'timestamp': str(s), # timestamp
-                'value': value, # predicted result
-                'probability': str(prob),
-                'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
-            }
-            return Response(json.dumps(result, indent = 4), status=200)
-        elif mode=='2':
-            value, prob = rcgz2.rec_image(img)
-            e = time.time()
-            print("Recognition result: {}".format(value))
-            img.close()
-            result = {
-                'timestamp': str(s), # timestamp
-                'value': value, # predicted result
-                'probability': str(prob),
-                'speed_time(ms)': int((e-s) * 1000) # Identify the time spent
-            }
-            return Response(json.dumps(result, indent = 4), status=200)
-        elif mode=='3':
-            return Response('Not implemented yet.', status=204)
-        else:
-            return Response('Invalid request format', status=404)
-
-
-    else:
-        resp = Response(f'Invalid request', status=404)
+    if not req.files.get('image_file'):
+        resp = Response(f'Invalid request: image not found', status=404)
         resp.headers['Access-Control-Allow-Origin'] ='*'
         return resp
+
+    s = time.time()
+    file = req.files.get('image_file').read()
+    img = Image.open(BytesIO(file), mode="r")
+    # username = request.form.get("name")
+    print("Receive image size: {}".format(img.size))
+    mode = req.args.get('mode', default = None)
+    if mode=='1':
+        value, prob = rcgz1.rec_image(img)
+        result = {
+            'timestamp': str(s), # timestamp
+            'value': value, # predicted result
+            'probability': str(prob),
+        }
+    elif mode=='2':
+        value, prob = rcgz2.rec_image(img)
+        try:
+            new_val=eval(value)
+        except Exception as e:
+            print(e)
+            new_val=''
+
+        result = {
+            'timestamp': str(s), # timestamp
+            'origin_value': value, # predicted result
+            'value': new_val, # predicted result
+            'probability': str(prob),
+        }
+    elif mode=='3':
+        open_cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_BGRA2RGBA)
+        kernel = np.ones((2,2),np.uint8)
+        erosion = cv2.erode(open_cv_image, kernel, iterations = 1)
+        kernel = np.array([[0, -1, 0], [-1, 11, -1], [0, -1, 0]], np.float32) #锐化
+        dilation_flt = cv2.filter2D(erosion, -1, kernel=kernel)
+        im_pil = cv2.cvtColor(dilation_flt, cv2.COLOR_BGRA2RGBA)
+        im_pil = Image.fromarray(im_pil)
+        value, prob = rcgz3.rec_image(im_pil)
+        result = {
+            'timestamp': str(s), # timestamp
+            'value': value, # predicted result
+            'probability': str(prob),
+        }
+    else:
+        return Response('Invalid request format', status=404)
+
+
+    img.close()
+    e = time.time()
+    res_str = json.dumps(result, indent = 4)
+    print(res_str)
+    result['speed_time(ms)']=int((e-s) * 1000)
+    return Response(res_str, status=200)
+
 
 
 if __name__ =='__main__':
